@@ -12,7 +12,7 @@ use crate::util::constants::{
     RGB_TO_GREYSCALE, WHITE_RGB,
 };
 use crate::util::file_util::{check_file_exists, check_valid_file, write_to_file};
-use crate::util::{get_size_from_ascii, print_ascii, UnsafeImageBuffer};
+use crate::util::{UnsafeImageBuffer, get_size_from_ascii, print_ascii};
 
 #[derive(Builder, Debug, Deserialize)]
 #[builder(default)]
@@ -87,23 +87,22 @@ pub fn write_to_image<S: AsRef<str>>(
     size: &Size,
     invert: bool,
     font_size: f32,
-) {
+) -> Result<(), String> {
     let output_file = output_file.as_ref();
-    check_file_exists(output_file, overwrite);
+    check_file_exists(output_file, overwrite)?;
     match generate_ascii_image(ascii, size, invert, font_size).save(output_file) {
         Ok(_) => {
             println!("Successfully saved ascii image to {}", output_file);
+            Ok(())
         }
-        Err(e) => {
-            eprintln!("Failed to save ascii image to {}: {}", output_file, e);
-        }
+        Err(e) => Err(format!("Failed to save ascii image to {}: {}", output_file, e)),
     }
 }
 
 #[inline]
-pub fn convert_image_to_ascii(config: &ImageConfig) -> Vec<Vec<&'static str>> {
+pub fn convert_image_to_ascii(config: &ImageConfig) -> Result<Vec<Vec<&'static str>>, String> {
     let img_path = config.image_path.as_str();
-    check_valid_file(img_path);
+    check_valid_file(img_path)?;
     let scale_down = config.scale_down;
     let height_sample_scale = config.height_sample_scale;
 
@@ -131,14 +130,14 @@ pub fn convert_image_to_ascii(config: &ImageConfig) -> Vec<Vec<&'static str>> {
         }
     }
 
-    res
+    Ok(res)
 }
 
-pub fn process_image(config: ImageConfig) {
-    let ascii = convert_image_to_ascii(&config);
+pub fn process_image(config: ImageConfig) -> Result<(), String> {
+    let ascii = convert_image_to_ascii(&config)?;
 
     if let Some(file) = config.output_file_path.as_ref() {
-        write_to_file(file, config.overwrite, &ascii);
+        write_to_file(file, config.overwrite, &ascii)?;
     }
 
     if let Some(file) = config.output_image_path.as_ref() {
@@ -149,10 +148,11 @@ pub fn process_image(config: ImageConfig) {
             &get_size_from_ascii(&ascii, config.height_sample_scale, config.font_size),
             config.invert,
             config.font_size,
-        );
+        )?;
     }
 
     if config.output_file_path.is_none() && config.output_image_path.is_none() {
         print_ascii(&ascii);
     }
+    Ok(())
 }

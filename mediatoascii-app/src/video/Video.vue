@@ -3,10 +3,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
-import {
-  open as openDialog,
-  save as saveDialog,
-} from "@tauri-apps/plugin-dialog";
+import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { openPath as openExternally } from "@tauri-apps/plugin-opener";
 import { defaultVideoConfig, type VideoConfig } from "./video";
 
@@ -109,12 +106,21 @@ async function pickVideoFile() {
 }
 
 async function pickOutputFile() {
-  const selected = await saveDialog({
-    filters: [{ name: "MP4", extensions: ["mp4"] }],
-    defaultPath: config.value.output_video_path ?? undefined,
+  const selected = await openDialog({
+    directory: true,
+    multiple: false,
+    defaultPath: config.value.output_video_path
+      ? config.value.output_video_path.substring(
+          0,
+          config.value.output_video_path.lastIndexOf("/")
+        )
+      : undefined,
   });
   if (typeof selected === "string") {
-    config.value.output_video_path = selected;
+    // Check if path ends with separator, if not add it
+    const separator = selected.includes("\\") ? "\\" : "/";
+    const path = selected.endsWith(separator) ? selected : selected + separator;
+    config.value.output_video_path = path + "output.mp4";
   }
 }
 
@@ -247,7 +253,7 @@ const elapsedText = computed(() => {
               @click="pickOutputFile"
               :disabled="processing"
             >
-              CHOOSE DESTINATION
+              CHOOSE FOLDER
             </button>
           </div>
           <div class="relative group">

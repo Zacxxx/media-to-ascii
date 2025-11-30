@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import {
-  open as openDialog,
-  save as saveDialog,
-} from "@tauri-apps/plugin-dialog";
+import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { openPath } from "@tauri-apps/plugin-opener";
 import { invoke } from "@tauri-apps/api/core";
 import { defaultImageConfig, type ImageConfig } from "./image";
@@ -77,22 +74,38 @@ async function pickImage() {
 }
 
 async function pickTextOutput() {
-  const selected = await saveDialog({
-    filters: [{ name: "Text", extensions: ["txt"] }],
-    defaultPath: config.value.output_file_path ?? undefined,
+  const selected = await openDialog({
+    directory: true,
+    multiple: false,
+    defaultPath: config.value.output_file_path
+      ? config.value.output_file_path.substring(
+          0,
+          config.value.output_file_path.lastIndexOf("/")
+        )
+      : undefined,
   });
   if (typeof selected === "string") {
-    config.value.output_file_path = selected;
+    const separator = selected.includes("\\") ? "\\" : "/";
+    const path = selected.endsWith(separator) ? selected : selected + separator;
+    config.value.output_file_path = path + "output.txt";
   }
 }
 
 async function pickImageOutput() {
-  const selected = await saveDialog({
-    filters: [{ name: "Images", extensions: ["png", "jpg", "jpeg"] }],
-    defaultPath: config.value.output_image_path ?? undefined,
+  const selected = await openDialog({
+    directory: true,
+    multiple: false,
+    defaultPath: config.value.output_image_path
+      ? config.value.output_image_path.substring(
+          0,
+          config.value.output_image_path.lastIndexOf("/")
+        )
+      : undefined,
   });
   if (typeof selected === "string") {
-    config.value.output_image_path = selected;
+    const separator = selected.includes("\\") ? "\\" : "/";
+    const path = selected.endsWith(separator) ? selected : selected + separator;
+    config.value.output_image_path = path + "output.png";
   }
 }
 
@@ -210,7 +223,7 @@ async function openOutput(path: string) {
                 @click="pickTextOutput"
                 :disabled="processing"
               >
-                CHOOSE PATH
+                CHOOSE FOLDER
               </button>
             </div>
             <div class="relative group">
@@ -239,7 +252,7 @@ async function openOutput(path: string) {
                 @click="pickImageOutput"
                 :disabled="processing"
               >
-                CHOOSE PATH
+                CHOOSE FOLDER
               </button>
             </div>
             <div class="relative group">
