@@ -4,6 +4,7 @@ use image::{GenericImageView, ImageBuffer, Rgb, RgbImage};
 use imageproc::drawing::draw_text_mut;
 use opencv::core::Size;
 use rayon::prelude::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator};
+use serde::Deserialize;
 use std::cell::UnsafeCell;
 
 use crate::util::constants::{
@@ -13,7 +14,7 @@ use crate::util::constants::{
 use crate::util::file_util::{check_file_exists, check_valid_file, write_to_file};
 use crate::util::{get_size_from_ascii, print_ascii, UnsafeImageBuffer};
 
-#[derive(Builder, Debug)]
+#[derive(Builder, Debug, Deserialize)]
 #[builder(default)]
 pub struct ImageConfig {
     image_path: String,
